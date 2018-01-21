@@ -72,6 +72,8 @@ http://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspb
 - [ ] **TODO:** non-blocking keyboard input using threads (https://stackoverflow.com/a/19655992)
 - [x] ~~**TODO:** better logging for monitoring battery usage and soil calibration~~
 - [ ] **TODO:** https://setuptools.readthedocs.io/en/latest/setuptools.html
+- [ ] **TODO:** create trello board and work on review notes (env -vs- ini file)
+- [ ] **TODO:** implement `LOG_ENABLE` logic
 """
 from __future__ import print_function
 
@@ -100,7 +102,7 @@ LOG_MAXSIZE = int( os.getenv( 'LOG_MAXSIZE' ) )
 LOG_PATH = str( os.getenv( 'LOG_PATH' ) )
 LOG_FILENAME = str( os.path.basename( __file__ ) + '.log' )
 LOG_FULLPATH = LOG_PATH + '/' + LOG_FILENAME
-LOG_FORMAT = logging.Formatter( '%(asctime)s %(message)s' )
+LOG_FORMAT = logging.Formatter( '%(asctime)s %(message)s', "%Y-%m-%d %H:%M:%S" )
 LOGGER = logging.getLogger( LOG_FILENAME )
 
 CHANNEL = int( os.getenv( 'CHANNEL' ) )
@@ -137,7 +139,7 @@ def check_log_dir():
         raise # TODO: disable logging?
 
 def init_logging():
-    handler = logging.handlers.RotatingFileHandler( filename=LOG_FULLPATH, maxBytes=1024*LOG_MAXSIZE, backupCount=10 )
+    handler = logging.handlers.RotatingFileHandler( filename=LOG_FULLPATH, maxBytes=(1024*1024)*LOG_MAXSIZE, backupCount=10 )
     handler.setFormatter( LOG_FORMAT )
 
     print_handler = logging.StreamHandler( stream=sys.stdout )

@@ -70,3 +70,5 @@ http://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspb
 - [ ] **TODO:** non-blocking keyboard input using threads (https://stackoverflow.com/a/19655992)
 - [x] ~~**TODO:** better logging for monitoring battery usage and soil calibration~~
 - [ ] **TODO:** https://setuptools.readthedocs.io/en/latest/setuptools.html
+- [ ] **TODO:** create trello board and work on review notes (env -vs- ini file)
+- [ ] **TODO:** implement `LOG_ENABLE` logic
