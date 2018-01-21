@@ -73,6 +73,7 @@ import smtplib
 import logging
 import logging.handlers
 
+from threading import Event
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -82,6 +83,47 @@ from dotenv import load_dotenv
 
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_MCP3008
+
+class SDIMoistureSensor( object ):
+    def __init__( self ):
+        self.channel = 0
+        self.spi_port = 0
+        self.spi_device = 0
+        self.polling_rate = 0.5
+        self._on_moisture_gain = Event()
+        self._on_moisture_loss = Event()
+        self.mcp3008 = Adafruit_MCP3008.MCP3008( spi=SPI.SpiDev( self.spi_port, self.spi_device ) )
+
+    @property
+    def on_moisture_gain( self ):
+        return self._on_moisture_gain
+
+    @property
+    def on_moisture_loss( self ):
+        return self._on_moisture_loss
+
+    @on_moisture_gain.setter
+    def on_moisture_gain( self, value ):
+        self._on_moisture_gain = value
+
+    @on_moisture_loss.setter
+    def on_moisture_loss( self, value ):
+        self._on_moisture_loss = value
+
+    def run( self ):
+        prev_value = -1
+
+        while True:
+            value = self.mcp3008.read_adc( self.channel )
+
+            if value != prev_value:
+                if value < prev_value:
+                    self._on_moisture_gain( value )
+                elif value > prev_value:
+                    self._on_moisture_loss( value )
+
+            prev_value = value
+            time.sleep( self.polling_rate )
 
 PWD_PATH = os.path.dirname( os.path.realpath( __file__ ) )
 load_dotenv( os.path.join( PWD_PATH, '.env' ) )
@@ -155,50 +197,41 @@ def send_email():
     except smtplib.SMTPException:
         print( Fore.RED + 'ERROR: Unable to send email!' + Style.RESET_ALL )
 
-def handle_moisture_gain():
+def handle_moisture_gain( value ):
     global GAIN_COUNT # pylint: disable=W0603
     GAIN_COUNT += 1
     LOGGER.info(
         Fore.YELLOW + 'Moisture gain detected! (#' + str( GAIN_COUNT ) + ')' +
         Style.RESET_ALL
     )
+    LOGGER.info(
+        'Value: ' + Style.BRIGHT + str( value ) +
+        Style.RESET_ALL
+    )
 
-def handle_moisture_loss():
+def handle_moisture_loss( value ):
     global LOSS_COUNT # pylint: disable=W0603
     LOSS_COUNT += 1
     LOGGER.info(
         Fore.CYAN + 'Moisture loss detected! (#' + str( LOSS_COUNT ) + ')' +
         Style.RESET_ALL
     )
+    LOGGER.info(
+        'Value: ' + Style.BRIGHT + str( value ) +
+        Style.RESET_ALL
+    )
     # load_email_content()
     # send_email()
-
-def main():
-    prev_value = -1
-
-    while True:
-        value = MCP3008.read_adc( CHANNEL )
-
-        if value != prev_value:
-            if value < prev_value:
-                handle_moisture_gain()
-            elif value > prev_value:
-                handle_moisture_loss()
-
-            LOGGER.info(
-                'Value: ' + Style.BRIGHT + str( value ) +
-                Style.RESET_ALL
-            )
-
-        prev_value = value
-        time.sleep( POLLING_RATE )
 
 try:
     check_log_dir()
     init_logging()
 
     # monitor moisture level logic
-    main()
+    MOISTURE_SENSOR = SDIMoistureSensor()
+    MOISTURE_SENSOR.on_moisture_gain = handle_moisture_gain
+    MOISTURE_SENSOR.on_moisture_loss = handle_moisture_loss
+    MOISTURE_SENSOR.run()
 except ( KeyboardInterrupt, EOFError ):
     pass
 finally:
