@@ -40,8 +40,6 @@ $ exit
 3. ???
 4. Profit.
 
---------------------
-
 ## Hardware Requirements
 
 To read specific moisture levels the sensor's analog signal must be used. Unfortunately, Raspberry PI doesn't support analog ootb so the following are needed:
@@ -59,8 +57,6 @@ https://learn.adafruit.com/raspberry-pi-analog-to-digital-converters/mcp3008#wir
 *NOTE: I used hardware SPI which needs to be enabled:*
 
 http://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspberry-pi/
-
---------------------
 
 ## Resources
 
