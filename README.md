@@ -63,20 +63,5 @@ http://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspb
 ## Resources
 
 - https://www.modmypi.com/blog/raspberry-pi-plant-pot-moisture-sensor-via-analogue-signals
-- https://www.raspberrypi.org/forums/viewtopic.php?t=55754
 - https://www.raspberrypi-spy.co.uk/2013/10/analogue-sensors-on-the-raspberry-pi-using-an-mcp3008/
 - https://computers.tutsplus.com/tutorials/build-a-raspberry-pi-moisture-sensor-to-monitor-your-plants--mac-52875
-
---------------------
-
-- [ ] **TODO:** better error handling for when device not found
-- [ ] **TODO:** calibrate it to soil: ~497-600 when soil is recently watered. slowly goes up to ~850 over 4hours
-- [x] ~~**TODO:** pull specific moisture levels?~~
-- [ ] **TODO:** upgrade to python 3?
-- [ ] **TODO:** keep count of warnings. if reached threshold send an e-mail
-- [ ] **TODO:** limit e-mails via configuration variables
-- [ ] **TODO:** non-blocking keyboard input using threads (https://stackoverflow.com/a/19655992)
-- [x] ~~**TODO:** better logging for monitoring battery usage and soil calibration~~
-- [ ] **TODO:** https://setuptools.readthedocs.io/en/latest/setuptools.html
-- [ ] **TODO:** create trello board and work on review notes (env -vs- ini file)
-- [ ] **TODO:** implement `LOG_ENABLE` logic
