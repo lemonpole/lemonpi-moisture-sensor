@@ -72,6 +72,7 @@ import time
 import smtplib
 import logging
 import logging.handlers
+import argparse
 
 from threading import Event
 from email.mime.multipart import MIMEMultipart
@@ -125,8 +126,50 @@ class SDIMoistureSensor( object ):
             prev_value = value
             time.sleep( self.polling_rate )
 
+class Config( object ):
+    def __init__( self, args, ini_fullpath=None ):
+        self.ini_fullpath = ini_fullpath
+        self.args = args
+
+    def get_config( self, name, default_val, cmd_line=True, env_var=False, ini=False ):
+        '''
+        depending on predicates above(cmd_line, env_var, ini) will consider the precedence order:
+            - looks for command line arg
+            - looks for for environment variable
+            - looks for ini in specified path
+            - finally defaults to provided
+            - if nothing found, throw exception
+        '''
+        # does it exist in the app args?
+        if cmd_line and getattr( self.args, name.lower() ) is not None:
+            return str( getattr( self.args, name.lower() ) )
+
+        if env_var and name in os.environ:
+            return str( os.getenv( name ) )
+
+        return str( default_val )
+
+ARGPARSER = argparse.ArgumentParser( description='Yooo. I do shit my nigga' )
+ARGPARSER.add_argument( '--channel', help='Change channel' )
+ARGPARSER.add_argument( '--spi-port', help='SPI Port', type=int )
+ARGPARSER.add_argument( '--spi-device', help='SPI Device', type=int )
+ARGPARSER.add_argument( '--polling-rate', help='Polling Rate', type=int )
+
+config = Config( ARGPARSER.parse_args() )
+print( config.get_config( 'CHANNEL', default_val=0, env_var=True ) )
+print( config.get_config( 'SPI_PORT', default_val=0, env_var=True ) )
+print( config.get_config( 'SPI_DEVICE', default_val=0, env_var=True ) )
+print( config.get_config( 'POLLING_RATE', default_val=5, env_var=True ) )
+sys.exit()
+
 PWD_PATH = os.path.dirname( os.path.realpath( __file__ ) )
 load_dotenv( os.path.join( PWD_PATH, '.env' ) )
+
+CHANNEL = int( os.getenv( 'CHANNEL' ) )
+SPI_PORT = int( os.getenv( 'SPI_PORT' ) )
+SPI_DEVICE = int( os.getenv( 'SPI_DEVICE' ) )
+POLLING_RATE = float( os.getenv( 'POLLING_RATE' ) )
+MCP3008 = Adafruit_MCP3008.MCP3008( spi=SPI.SpiDev( SPI_PORT, SPI_DEVICE ) )
 
 LOG_ENABLE = bool( os.getenv( 'LOG_ENABLE' ) )
 LOG_MAXSIZE = int( os.getenv( 'LOG_MAXSIZE' ) )
@@ -135,12 +178,6 @@ LOG_FILENAME = str( os.path.basename( __file__ ) + '.log' )
 LOG_FULLPATH = LOG_PATH + '/' + LOG_FILENAME
 LOG_FORMAT = logging.Formatter( '%(asctime)s %(message)s', "%Y-%m-%d %H:%M:%S" )
 LOGGER = logging.getLogger( LOG_FILENAME )
-
-CHANNEL = int( os.getenv( 'CHANNEL' ) )
-SPI_PORT = int( os.getenv( 'SPI_PORT' ) )
-SPI_DEVICE = int( os.getenv( 'SPI_DEVICE' ) )
-POLLING_RATE = float( os.getenv( 'POLLING_RATE' ) )
-MCP3008 = Adafruit_MCP3008.MCP3008( spi=SPI.SpiDev( SPI_PORT, SPI_DEVICE ) )
 
 SMTP_HOST = str( os.getenv( 'SMTP_HOST' ) )
 SMTP_PORT = int( os.getenv( 'SMTP_PORT' ) )
