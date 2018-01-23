@@ -199,7 +199,6 @@ LOG_MAXSIZE = int( ARGPARSERCONFIG.get_config( 'LOG_MAXSIZE', default_val=Defaul
 LOG_PATH = str( ARGPARSERCONFIG.get_config( 'LOG_PATH', default_val=DefaultValues.LOG_PATH, cmd_line=False, ini=True, ini_section='LOGGING' ) )
 
 # instantiate objects based off of provided configuration above
-MCP3008 = Adafruit_MCP3008.MCP3008( spi=SPI.SpiDev( SPI_PORT, SPI_DEVICE ) )
 LOG_FILENAME = str( os.path.basename( __file__ ) + '.log' )
 LOG_FULLPATH = LOG_PATH + '/' + LOG_FILENAME
 LOG_FORMAT = logging.Formatter( '%(asctime)s %(message)s', "%Y-%m-%d %H:%M:%S" )
