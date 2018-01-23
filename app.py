@@ -13,7 +13,6 @@ _Table of measurements and average readings to come..._
 - Raspbian GNU/Linux 8 (jessie)
   - with [hardware SPI enabled](https://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspberry-pi/)
 ```bash
-$ sudo pip install python-dotenv
 $ sudo pip install jinja2
 $ sudo pip install adafruit-mcp3008
 ```
@@ -73,6 +72,7 @@ import smtplib
 import logging
 import logging.handlers
 import argparse
+import ConfigParser
 
 from threading import Event
 from email.mime.multipart import MIMEMultipart
@@ -80,7 +80,6 @@ from email.mime.text import MIMEText
 
 from colorama import Fore, Style
 from jinja2 import Environment, FileSystemLoader
-from dotenv import load_dotenv
 
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_MCP3008
@@ -130,8 +129,10 @@ class Config( object ):
     def __init__( self, args, ini_fullpath=None ):
         self.ini_fullpath = ini_fullpath
         self.args = args
+        self.config_parser = ConfigParser.ConfigParser()
+        self.config_parser.read( ini_fullpath )
 
-    def get_config( self, name, default_val, cmd_line=True, env_var=False, ini=False ):
+    def get_config( self, name, default_val, cmd_line=True, env_var=False, ini=False, ini_section=None ):
         '''
         depending on predicates above(cmd_line, env_var, ini) will consider the precedence order:
             - looks for command line arg
@@ -147,47 +148,62 @@ class Config( object ):
         if env_var and name in os.environ:
             return str( os.getenv( name ) )
 
+        if ini and self.config_parser.get( ini_section, name ) > -1:
+            return str( self.config_parser.get( ini_section, name ) )
+
         return str( default_val )
 
-ARGPARSER = argparse.ArgumentParser( description='Yooo. I do shit my nigga' )
-ARGPARSER.add_argument( '--channel', help='Change channel' )
+class DefaultValues( object ):
+    PWD_PATH = os.path.dirname( os.path.realpath( __file__ ) )
+    CHANNEL = 0
+    SPI_PORT = 0
+    SPI_DEVICE = 0
+    POLLING_RATE = 5
+    LOG_ENABLE = True
+    LOG_MAXSIZE = 100
+    LOG_PATH = '/var/log/moisture-sensor'
+    SMTP_HOST = 'email-smtp.us-east-1.amazonaws.com'
+    SMTP_PORT = 587
+    SMTP_USER = 'user'
+    SMTP_PASS = 'password'
+    SMTP_FROM = 'Mr. Plant Bot <plantbot@your.domain>'
+    SMTP_TO = 'you@domain.com'
+    EMAIL_SUBJECT = 'Moisture Sensor Notification'
+    EMAIL_TMPL_FILENAME = 'no-moisture.email.html'
+
+# declare app args
+ARGPARSER = argparse.ArgumentParser( description='Yooo. I do some stuff right here...' )
+ARGPARSER.add_argument( '--channel', help='Change channel', type=int )
 ARGPARSER.add_argument( '--spi-port', help='SPI Port', type=int )
 ARGPARSER.add_argument( '--spi-device', help='SPI Device', type=int )
 ARGPARSER.add_argument( '--polling-rate', help='Polling Rate', type=int )
+ARGPARSERCONFIG = Config( ARGPARSER.parse_args(), ini_fullpath=os.path.join( DefaultValues.PWD_PATH, os.path.basename( __file__ ) + '.ini' ) )
 
-config = Config( ARGPARSER.parse_args() )
-print( config.get_config( 'CHANNEL', default_val=0, env_var=True ) )
-print( config.get_config( 'SPI_PORT', default_val=0, env_var=True ) )
-print( config.get_config( 'SPI_DEVICE', default_val=0, env_var=True ) )
-print( config.get_config( 'POLLING_RATE', default_val=5, env_var=True ) )
-sys.exit()
+# load configuration
+CHANNEL = int( ARGPARSERCONFIG.get_config( 'CHANNEL', default_val=DefaultValues.CHANNEL, env_var=True, ini=True, ini_section='IO' ) )
+SPI_PORT = int( ARGPARSERCONFIG.get_config( 'SPI_PORT', default_val=DefaultValues.SPI_PORT, env_var=True, ini=True, ini_section='IO' ) )
+SPI_DEVICE = int( ARGPARSERCONFIG.get_config( 'SPI_DEVICE', default_val=DefaultValues.SPI_DEVICE, env_var=True, ini=True, ini_section='IO' ) )
+POLLING_RATE = float( ARGPARSERCONFIG.get_config( 'POLLING_RATE', default_val=DefaultValues.POLLING_RATE, env_var=True, ini=True, ini_section='IO' ) )
 
-PWD_PATH = os.path.dirname( os.path.realpath( __file__ ) )
-load_dotenv( os.path.join( PWD_PATH, '.env' ) )
+EMAIL_SUBJECT = str( ARGPARSERCONFIG.get_config( 'EMAIL_SUBJECT', default_val=DefaultValues.EMAIL_SUBJECT, cmd_line=False, ini=True, ini_section='EMAIL' ) )
+EMAIL_TMPL_FILENAME = str( ARGPARSERCONFIG.get_config( 'EMAIL_TMPL_FILENAME', default_val=DefaultValues.EMAIL_TMPL_FILENAME, cmd_line=False, ini=True, ini_section='EMAIL' ) )
+SMTP_HOST = str( ARGPARSERCONFIG.get_config( 'SMTP_HOST', default_val=DefaultValues.SMTP_HOST, cmd_line=False, ini=True, ini_section='EMAIL' ) )
+SMTP_PORT = int( ARGPARSERCONFIG.get_config( 'SMTP_PORT', default_val=DefaultValues.SMTP_PORT, cmd_line=False, ini=True, ini_section='EMAIL' ) )
+SMTP_USER = str( ARGPARSERCONFIG.get_config( 'SMTP_USER', default_val=DefaultValues.SMTP_USER, cmd_line=False, ini=True, ini_section='EMAIL' ) )
+SMTP_PASS = str( ARGPARSERCONFIG.get_config( 'SMTP_PASS', default_val=DefaultValues.SMTP_PASS, cmd_line=False, ini=True, ini_section='EMAIL' ) )
+SMTP_FROM = str( ARGPARSERCONFIG.get_config( 'SMTP_FROM', default_val=DefaultValues.SMTP_FROM, cmd_line=False, ini=True, ini_section='EMAIL' ) )
+SMTP_TO = str( ARGPARSERCONFIG.get_config( 'SMTP_TO', default_val=DefaultValues.SMTP_TO, cmd_line=False, ini=True, ini_section='EMAIL' ) )
 
-CHANNEL = int( os.getenv( 'CHANNEL' ) )
-SPI_PORT = int( os.getenv( 'SPI_PORT' ) )
-SPI_DEVICE = int( os.getenv( 'SPI_DEVICE' ) )
-POLLING_RATE = float( os.getenv( 'POLLING_RATE' ) )
+LOG_ENABLE = bool( ARGPARSERCONFIG.get_config( 'LOG_ENABLE', default_val=DefaultValues.LOG_ENABLE, cmd_line=False, ini=True, ini_section='LOGGING' ) )
+LOG_MAXSIZE = int( ARGPARSERCONFIG.get_config( 'LOG_MAXSIZE', default_val=DefaultValues.LOG_MAXSIZE, cmd_line=False, ini=True, ini_section='LOGGING' ) )
+LOG_PATH = str( ARGPARSERCONFIG.get_config( 'LOG_PATH', default_val=DefaultValues.LOG_PATH, cmd_line=False, ini=True, ini_section='LOGGING' ) )
+
+# instantiate objects based off of provided configuration above
 MCP3008 = Adafruit_MCP3008.MCP3008( spi=SPI.SpiDev( SPI_PORT, SPI_DEVICE ) )
-
-LOG_ENABLE = bool( os.getenv( 'LOG_ENABLE' ) )
-LOG_MAXSIZE = int( os.getenv( 'LOG_MAXSIZE' ) )
-LOG_PATH = str( os.getenv( 'LOG_PATH' ) )
 LOG_FILENAME = str( os.path.basename( __file__ ) + '.log' )
 LOG_FULLPATH = LOG_PATH + '/' + LOG_FILENAME
 LOG_FORMAT = logging.Formatter( '%(asctime)s %(message)s', "%Y-%m-%d %H:%M:%S" )
 LOGGER = logging.getLogger( LOG_FILENAME )
-
-SMTP_HOST = str( os.getenv( 'SMTP_HOST' ) )
-SMTP_PORT = int( os.getenv( 'SMTP_PORT' ) )
-SMTP_USER = str( os.getenv( 'SMTP_USER' ) )
-SMTP_PASS = str( os.getenv( 'SMTP_PASS' ) )
-SMTP_FROM = str( os.getenv( 'SMTP_FROM' ) )
-SMTP_TO = str( os.getenv( 'SMTP_TO' ) )
-
-EMAIL_SUBJECT = str( os.getenv( 'EMAIL_SUBJECT' ) )
-EMAIL_TMPL_FILENAME = str( os.getenv( 'EMAIL_TMPL_FILENAME' ) )
 
 MESSAGE_OBJ = MIMEMultipart( 'alternative' ) # contains text/plain and text/html
 MESSAGE_OBJ[ 'Subject' ] = EMAIL_SUBJECT

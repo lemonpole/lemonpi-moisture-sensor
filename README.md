@@ -11,7 +11,6 @@ _Table of measurements and average readings to come..._
 - Raspbian GNU/Linux 8 (jessie)
   - with [hardware SPI enabled](https://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspberry-pi/)
 ```bash
-$ sudo pip install python-dotenv
 $ sudo pip install jinja2
 $ sudo pip install adafruit-mcp3008
 ```
