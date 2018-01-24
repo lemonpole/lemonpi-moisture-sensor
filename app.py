@@ -132,7 +132,7 @@ class Config( object ):
         self.config_parser = ConfigParser.ConfigParser()
         self.config_parser.read( ini_fullpath )
 
-    def get_config( self, name, default_val, cmd_line=True, env_var=False, ini=False, ini_section=None ):
+    def get_config( self, name, default_val, cmd_line=True, env_var=False, ini=False, ini_section=None, ini_bool=False ):
         '''
         depending on predicates above(cmd_line, env_var, ini) will consider the precedence order:
             - looks for command line arg
@@ -149,9 +149,13 @@ class Config( object ):
             return str( os.getenv( name ) )
 
         if ini and self.config_parser.get( ini_section, name ) > -1:
-            return str( self.config_parser.get( ini_section, name ) )
+            if ini_bool:
+                return self.config_parser.getboolean( ini_section, name )
+            else:
+                return str( self.config_parser.get( ini_section, name ) )
 
         return str( default_val )
+
 
 class DefaultValues( object ):
     PWD_PATH = os.path.dirname( os.path.realpath( __file__ ) )
@@ -194,7 +198,7 @@ SMTP_PASS = str( ARGPARSERCONFIG.get_config( 'SMTP_PASS', default_val=DefaultVal
 SMTP_FROM = str( ARGPARSERCONFIG.get_config( 'SMTP_FROM', default_val=DefaultValues.SMTP_FROM, cmd_line=False, ini=True, ini_section='EMAIL' ) )
 SMTP_TO = str( ARGPARSERCONFIG.get_config( 'SMTP_TO', default_val=DefaultValues.SMTP_TO, cmd_line=False, ini=True, ini_section='EMAIL' ) )
 
-LOG_ENABLE = bool( ARGPARSERCONFIG.get_config( 'LOG_ENABLE', default_val=DefaultValues.LOG_ENABLE, cmd_line=False, ini=True, ini_section='LOGGING' ) )
+LOG_ENABLE = bool( ARGPARSERCONFIG.get_config( 'LOG_ENABLE', default_val=DefaultValues.LOG_ENABLE, cmd_line=False, ini=True, ini_section='LOGGING', ini_bool=True ) )
 LOG_MAXSIZE = int( ARGPARSERCONFIG.get_config( 'LOG_MAXSIZE', default_val=DefaultValues.LOG_MAXSIZE, cmd_line=False, ini=True, ini_section='LOGGING' ) )
 LOG_PATH = str( ARGPARSERCONFIG.get_config( 'LOG_PATH', default_val=DefaultValues.LOG_PATH, cmd_line=False, ini=True, ini_section='LOGGING' ) )
 
@@ -222,15 +226,16 @@ def check_log_dir():
         raise # TODO: disable logging?
 
 def init_logging():
-    handler = logging.handlers.RotatingFileHandler( filename=LOG_FULLPATH, maxBytes=(1024*1024)*LOG_MAXSIZE, backupCount=10 )
-    handler.setFormatter( LOG_FORMAT )
+    # declare and add rotating file handler only if logging is enabled
+    if LOG_ENABLE:
+        handler = logging.handlers.RotatingFileHandler( filename=LOG_FULLPATH, maxBytes=(1024*1024)*LOG_MAXSIZE, backupCount=10 )
+        handler.setFormatter( LOG_FORMAT )
+        LOGGER.addHandler( handler )
 
     print_handler = logging.StreamHandler( stream=sys.stdout )
     print_handler.setFormatter( LOG_FORMAT )
-
-    LOGGER.setLevel( logging.INFO )
     LOGGER.addHandler( print_handler )
-    LOGGER.addHandler( handler )
+    LOGGER.setLevel( logging.INFO )
 
 def load_email_content():
     env = Environment( loader=FileSystemLoader( PWD_PATH ), trim_blocks=True )
