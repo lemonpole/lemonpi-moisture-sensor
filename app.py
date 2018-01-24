@@ -156,24 +156,24 @@ class Config( object ):
 
         return str( default_val )
 
-
 class DefaultValues( object ):
     PWD_PATH = os.path.dirname( os.path.realpath( __file__ ) )
     CHANNEL = 0
     SPI_PORT = 0
     SPI_DEVICE = 0
     POLLING_RATE = 5
-    LOG_ENABLE = True
-    LOG_MAXSIZE = 100
-    LOG_PATH = '/var/log/moisture-sensor'
+    EMAIL_ENABLE = True
+    EMAIL_SUBJECT = 'Moisture Sensor Notification'
+    EMAIL_TMPL_FILENAME = 'no-moisture.email.html'
     SMTP_HOST = 'email-smtp.us-east-1.amazonaws.com'
     SMTP_PORT = 587
     SMTP_USER = 'user'
     SMTP_PASS = 'password'
     SMTP_FROM = 'Mr. Plant Bot <plantbot@your.domain>'
     SMTP_TO = 'you@domain.com'
-    EMAIL_SUBJECT = 'Moisture Sensor Notification'
-    EMAIL_TMPL_FILENAME = 'no-moisture.email.html'
+    LOG_ENABLE = True
+    LOG_MAXSIZE = 100
+    LOG_PATH = '/var/log/moisture-sensor'
 
 # declare app args
 ARGPARSER = argparse.ArgumentParser( description='Yooo. I do some stuff right here...' )
@@ -189,6 +189,7 @@ SPI_PORT = int( ARGPARSERCONFIG.get_config( 'SPI_PORT', default_val=DefaultValue
 SPI_DEVICE = int( ARGPARSERCONFIG.get_config( 'SPI_DEVICE', default_val=DefaultValues.SPI_DEVICE, env_var=True, ini=True, ini_section='IO' ) )
 POLLING_RATE = float( ARGPARSERCONFIG.get_config( 'POLLING_RATE', default_val=DefaultValues.POLLING_RATE, env_var=True, ini=True, ini_section='IO' ) )
 
+EMAIL_ENABLE = bool( ARGPARSERCONFIG.get_config( 'EMAIL_ENABLE', default_val=DefaultValues.EMAIL_ENABLE, cmd_line=False, env_var=True, ini=True, ini_section='EMAIL', ini_bool=True ) )
 EMAIL_SUBJECT = str( ARGPARSERCONFIG.get_config( 'EMAIL_SUBJECT', default_val=DefaultValues.EMAIL_SUBJECT, cmd_line=False, ini=True, ini_section='EMAIL' ) )
 EMAIL_TMPL_FILENAME = str( ARGPARSERCONFIG.get_config( 'EMAIL_TMPL_FILENAME', default_val=DefaultValues.EMAIL_TMPL_FILENAME, cmd_line=False, ini=True, ini_section='EMAIL' ) )
 SMTP_HOST = str( ARGPARSERCONFIG.get_config( 'SMTP_HOST', default_val=DefaultValues.SMTP_HOST, cmd_line=False, ini=True, ini_section='EMAIL' ) )
@@ -238,7 +239,7 @@ def init_logging():
     LOGGER.setLevel( logging.INFO )
 
 def load_email_content():
-    env = Environment( loader=FileSystemLoader( PWD_PATH ), trim_blocks=True )
+    env = Environment( loader=FileSystemLoader( DefaultValues.PWD_PATH ), trim_blocks=True )
     msg = env.get_template( EMAIL_TMPL_FILENAME ).render()
     MESSAGE_OBJ.attach( MIMEText( msg, 'html', 'utf-8' ) )
 
@@ -277,8 +278,10 @@ def handle_moisture_loss( value ):
         'Value: ' + Style.BRIGHT + str( value ) +
         Style.RESET_ALL
     )
-    # load_email_content()
-    # send_email()
+
+    if EMAIL_ENABLE:
+        load_email_content()
+        send_email()
 
 try:
     check_log_dir()
