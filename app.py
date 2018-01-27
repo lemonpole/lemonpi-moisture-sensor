@@ -181,27 +181,76 @@ ARGPARSER.add_argument( '--channel', help='Change channel', type=int )
 ARGPARSER.add_argument( '--spi-port', help='SPI Port', type=int )
 ARGPARSER.add_argument( '--spi-device', help='SPI Device', type=int )
 ARGPARSER.add_argument( '--polling-rate', help='Polling Rate', type=int )
-ARGPARSERCONFIG = Config( ARGPARSER.parse_args(), ini_fullpath=os.path.join( DefaultValues.PWD_PATH, os.path.basename( __file__ ) + '.ini' ) )
+ARGPARSERCONFIG = Config(
+    ARGPARSER.parse_args(),
+    ini_fullpath=os.path.join( DefaultValues.PWD_PATH, os.path.basename( __file__ ) + '.ini' )
+)
 
 # load configuration
-CHANNEL = int( ARGPARSERCONFIG.get_config( 'CHANNEL', default_val=DefaultValues.CHANNEL, env_var=True, ini=True, ini_section='IO' ) )
-SPI_PORT = int( ARGPARSERCONFIG.get_config( 'SPI_PORT', default_val=DefaultValues.SPI_PORT, env_var=True, ini=True, ini_section='IO' ) )
-SPI_DEVICE = int( ARGPARSERCONFIG.get_config( 'SPI_DEVICE', default_val=DefaultValues.SPI_DEVICE, env_var=True, ini=True, ini_section='IO' ) )
-POLLING_RATE = float( ARGPARSERCONFIG.get_config( 'POLLING_RATE', default_val=DefaultValues.POLLING_RATE, env_var=True, ini=True, ini_section='IO' ) )
-
-EMAIL_ENABLE = bool( ARGPARSERCONFIG.get_config( 'EMAIL_ENABLE', default_val=DefaultValues.EMAIL_ENABLE, cmd_line=False, env_var=True, ini=True, ini_section='EMAIL', ini_bool=True ) )
-EMAIL_SUBJECT = str( ARGPARSERCONFIG.get_config( 'EMAIL_SUBJECT', default_val=DefaultValues.EMAIL_SUBJECT, cmd_line=False, ini=True, ini_section='EMAIL' ) )
-EMAIL_TMPL_FILENAME = str( ARGPARSERCONFIG.get_config( 'EMAIL_TMPL_FILENAME', default_val=DefaultValues.EMAIL_TMPL_FILENAME, cmd_line=False, ini=True, ini_section='EMAIL' ) )
-SMTP_HOST = str( ARGPARSERCONFIG.get_config( 'SMTP_HOST', default_val=DefaultValues.SMTP_HOST, cmd_line=False, ini=True, ini_section='EMAIL' ) )
-SMTP_PORT = int( ARGPARSERCONFIG.get_config( 'SMTP_PORT', default_val=DefaultValues.SMTP_PORT, cmd_line=False, ini=True, ini_section='EMAIL' ) )
-SMTP_USER = str( ARGPARSERCONFIG.get_config( 'SMTP_USER', default_val=DefaultValues.SMTP_USER, cmd_line=False, ini=True, ini_section='EMAIL' ) )
-SMTP_PASS = str( ARGPARSERCONFIG.get_config( 'SMTP_PASS', default_val=DefaultValues.SMTP_PASS, cmd_line=False, ini=True, ini_section='EMAIL' ) )
-SMTP_FROM = str( ARGPARSERCONFIG.get_config( 'SMTP_FROM', default_val=DefaultValues.SMTP_FROM, cmd_line=False, ini=True, ini_section='EMAIL' ) )
-SMTP_TO = str( ARGPARSERCONFIG.get_config( 'SMTP_TO', default_val=DefaultValues.SMTP_TO, cmd_line=False, ini=True, ini_section='EMAIL' ) )
-
-LOG_ENABLE = bool( ARGPARSERCONFIG.get_config( 'LOG_ENABLE', default_val=DefaultValues.LOG_ENABLE, cmd_line=False, ini=True, ini_section='LOGGING', ini_bool=True ) )
-LOG_MAXSIZE = int( ARGPARSERCONFIG.get_config( 'LOG_MAXSIZE', default_val=DefaultValues.LOG_MAXSIZE, cmd_line=False, ini=True, ini_section='LOGGING' ) )
-LOG_PATH = str( ARGPARSERCONFIG.get_config( 'LOG_PATH', default_val=DefaultValues.LOG_PATH, cmd_line=False, ini=True, ini_section='LOGGING' ) )
+CHANNEL = int( ARGPARSERCONFIG.get_config(
+    'CHANNEL', default_val=DefaultValues.CHANNEL,
+    env_var=True, ini=True, ini_section='IO'
+) )
+SPI_PORT = int( ARGPARSERCONFIG.get_config(
+    'SPI_PORT', default_val=DefaultValues.SPI_PORT,
+    env_var=True, ini=True, ini_section='IO'
+) )
+SPI_DEVICE = int( ARGPARSERCONFIG.get_config(
+    'SPI_DEVICE', default_val=DefaultValues.SPI_DEVICE,
+    env_var=True, ini=True, ini_section='IO'
+) )
+POLLING_RATE = float( ARGPARSERCONFIG.get_config(
+    'POLLING_RATE', default_val=DefaultValues.POLLING_RATE,
+    env_var=True, ini=True, ini_section='IO'
+) )
+EMAIL_ENABLE = bool( ARGPARSERCONFIG.get_config(
+    'EMAIL_ENABLE', default_val=DefaultValues.EMAIL_ENABLE,
+    cmd_line=False, env_var=True, ini=True, ini_section='EMAIL', ini_bool=True
+) )
+EMAIL_SUBJECT = str( ARGPARSERCONFIG.get_config(
+    'EMAIL_SUBJECT', default_val=DefaultValues.EMAIL_SUBJECT,
+    cmd_line=False, ini=True, ini_section='EMAIL'
+) )
+EMAIL_TMPL_FILENAME = str( ARGPARSERCONFIG.get_config(
+    'EMAIL_TMPL_FILENAME', default_val=DefaultValues.EMAIL_TMPL_FILENAME,
+    cmd_line=False, ini=True, ini_section='EMAIL'
+) )
+SMTP_HOST = str( ARGPARSERCONFIG.get_config(
+    'SMTP_HOST', default_val=DefaultValues.SMTP_HOST,
+    cmd_line=False, ini=True, ini_section='EMAIL'
+) )
+SMTP_PORT = int( ARGPARSERCONFIG.get_config(
+    'SMTP_PORT', default_val=DefaultValues.SMTP_PORT,
+    cmd_line=False, ini=True, ini_section='EMAIL'
+) )
+SMTP_USER = str( ARGPARSERCONFIG.get_config(
+    'SMTP_USER', default_val=DefaultValues.SMTP_USER,
+    cmd_line=False, ini=True, ini_section='EMAIL'
+) )
+SMTP_PASS = str( ARGPARSERCONFIG.get_config(
+    'SMTP_PASS', default_val=DefaultValues.SMTP_PASS,
+    cmd_line=False, ini=True, ini_section='EMAIL'
+) )
+SMTP_FROM = str( ARGPARSERCONFIG.get_config(
+    'SMTP_FROM', default_val=DefaultValues.SMTP_FROM,
+    cmd_line=False, ini=True, ini_section='EMAIL'
+) )
+SMTP_TO = str( ARGPARSERCONFIG.get_config(
+    'SMTP_TO', default_val=DefaultValues.SMTP_TO,
+    cmd_line=False, ini=True, ini_section='EMAIL'
+) )
+LOG_ENABLE = bool( ARGPARSERCONFIG.get_config(
+    'LOG_ENABLE', default_val=DefaultValues.LOG_ENABLE,
+    cmd_line=False, ini=True, ini_section='LOGGING', ini_bool=True
+) )
+LOG_MAXSIZE = int( ARGPARSERCONFIG.get_config(
+    'LOG_MAXSIZE', default_val=DefaultValues.LOG_MAXSIZE,
+    cmd_line=False, ini=True, ini_section='LOGGING'
+) )
+LOG_PATH = str( ARGPARSERCONFIG.get_config(
+    'LOG_PATH', default_val=DefaultValues.LOG_PATH,
+    cmd_line=False, ini=True, ini_section='LOGGING'
+) )
 
 # instantiate objects based off of provided configuration above
 LOG_FILENAME = str( os.path.basename( __file__ ) + '.log' )
