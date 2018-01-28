@@ -13,6 +13,7 @@ _Table of measurements and average readings to come..._
 ```bash
 $ sudo pip install jinja2
 $ sudo pip install adafruit-mcp3008
+$ sudo pip install pyfiglet
 ```
 
 ### Globally available as a script

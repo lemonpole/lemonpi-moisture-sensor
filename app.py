@@ -15,6 +15,7 @@ _Table of measurements and average readings to come..._
 ```bash
 $ sudo pip install jinja2
 $ sudo pip install adafruit-mcp3008
+$ sudo pip install pyfiglet
 ```
 
 ### Globally available as a script
@@ -77,6 +78,7 @@ import ConfigParser
 from threading import Event
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pyfiglet import Figlet
 
 from colorama import Fore, Style
 from jinja2 import Environment, FileSystemLoader
@@ -335,6 +337,10 @@ def handle_moisture_loss( value ):
 try:
     check_log_dir()
     init_logging()
+
+    # show fancy figlet
+    FIGLET = Figlet( font='basic' )
+    print( FIGLET.renderText( 'Moisture Sensor Py' ) )
 
     # monitor moisture level logic
     MOISTURE_SENSOR = SDIMoistureSensor()
