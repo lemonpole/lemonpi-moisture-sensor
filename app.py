@@ -78,20 +78,20 @@ import ConfigParser
 from threading import Event
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from pyfiglet import Figlet
 
 from colorama import Fore, Style
+from pyfiglet import Figlet
 from jinja2 import Environment, FileSystemLoader
 
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_MCP3008
 
-class SDIMoistureSensor( object ):
+class SDIMoistureSensorCollector( object ):
     def __init__( self ):
-        self.channel = 0
         self.spi_port = 0
         self.spi_device = 0
         self.polling_rate = 0.5
+        self.sensors = [ 0 ] * 8
         self._on_moisture_gain = Event()
         self._on_moisture_loss = Event()
         self.mcp3008 = Adafruit_MCP3008.MCP3008( spi=SPI.SpiDev( self.spi_port, self.spi_device ) )
@@ -105,26 +105,29 @@ class SDIMoistureSensor( object ):
         return self._on_moisture_loss
 
     @on_moisture_gain.setter
-    def on_moisture_gain( self, value ):
-        self._on_moisture_gain = value
+    def on_moisture_gain( self, func ):
+        self._on_moisture_gain = func
 
     @on_moisture_loss.setter
-    def on_moisture_loss( self, value ):
-        self._on_moisture_loss = value
+    def on_moisture_loss( self, func ):
+        self._on_moisture_loss = func
 
     def run( self ):
-        prev_value = -1
-
         while True:
-            value = self.mcp3008.read_adc( self.channel )
+            for channel in range( 8 ):
+                # read current channel value
+                # compare against channel's prev_value
+                # raise event if needed and pass current channel as arg
+                value = self.mcp3008.read_adc( channel )
 
-            if value != prev_value:
-                if value < prev_value:
-                    self._on_moisture_gain( value )
-                elif value > prev_value:
-                    self._on_moisture_loss( value )
+                if value != self.sensors[ channel ]:
+                    if value < self.sensors[ channel ]:
+                        self._on_moisture_gain( value, channel )
+                    elif value > self.sensors[ channel ]:
+                        self._on_moisture_loss( value, channel )
 
-            prev_value = value
+                self.sensors[ channel ] = value
+
             time.sleep( self.polling_rate )
 
 class Config( object ):
@@ -179,7 +182,6 @@ class DefaultValues( object ):
 
 # declare app args
 ARGPARSER = argparse.ArgumentParser( description='Yooo. I do some stuff right here...' )
-ARGPARSER.add_argument( '--channel', help='Change channel', type=int )
 ARGPARSER.add_argument( '--spi-port', help='SPI Port', type=int )
 ARGPARSER.add_argument( '--spi-device', help='SPI Device', type=int )
 ARGPARSER.add_argument( '--polling-rate', help='Polling Rate', type=int )
@@ -189,10 +191,6 @@ ARGPARSERCONFIG = Config(
 )
 
 # load configuration
-CHANNEL = int( ARGPARSERCONFIG.get_config(
-    'CHANNEL', default_val=DefaultValues.CHANNEL,
-    env_var=True, ini=True, ini_section='IO'
-) )
 SPI_PORT = int( ARGPARSERCONFIG.get_config(
     'SPI_PORT', default_val=DefaultValues.SPI_PORT,
     env_var=True, ini=True, ini_section='IO'
@@ -306,7 +304,7 @@ def send_email():
     except smtplib.SMTPException:
         print( Fore.RED + 'ERROR: Unable to send email!' + Style.RESET_ALL )
 
-def handle_moisture_gain( value ):
+def handle_moisture_gain( value, channel ):
     global GAIN_COUNT # pylint: disable=W0603
     GAIN_COUNT += 1
     LOGGER.info(
@@ -314,11 +312,13 @@ def handle_moisture_gain( value ):
         Style.RESET_ALL
     )
     LOGGER.info(
-        'Value: ' + Style.BRIGHT + str( value ) +
+        'Value: ' + Style.BRIGHT + str( value ) + ' ' +
+        Style.RESET_ALL +
+        'Channel: ' + Style.BRIGHT + str( channel ) +
         Style.RESET_ALL
     )
 
-def handle_moisture_loss( value ):
+def handle_moisture_loss( value, channel ):
     global LOSS_COUNT # pylint: disable=W0603
     LOSS_COUNT += 1
     LOGGER.info(
@@ -326,7 +326,9 @@ def handle_moisture_loss( value ):
         Style.RESET_ALL
     )
     LOGGER.info(
-        'Value: ' + Style.BRIGHT + str( value ) +
+        'Value: ' + Style.BRIGHT + str( value ) + ' ' +
+        Style.RESET_ALL +
+        'Channel: ' + Style.BRIGHT + str( channel ) +
         Style.RESET_ALL
     )
 
@@ -343,10 +345,10 @@ try:
     print( FIGLET.renderText( 'Moisture Sensor Py' ) )
 
     # monitor moisture level logic
-    MOISTURE_SENSOR = SDIMoistureSensor()
-    MOISTURE_SENSOR.on_moisture_gain = handle_moisture_gain
-    MOISTURE_SENSOR.on_moisture_loss = handle_moisture_loss
-    MOISTURE_SENSOR.run()
+    MOISTURE_SENSOR_COLLECTOR = SDIMoistureSensorCollector()
+    MOISTURE_SENSOR_COLLECTOR.on_moisture_gain = handle_moisture_gain
+    MOISTURE_SENSOR_COLLECTOR.on_moisture_loss = handle_moisture_loss
+    MOISTURE_SENSOR_COLLECTOR.run()
 except ( KeyboardInterrupt, EOFError ):
     pass
 finally:
