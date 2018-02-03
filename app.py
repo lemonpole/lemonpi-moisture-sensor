@@ -87,11 +87,12 @@ import Adafruit_GPIO.SPI as SPI
 import Adafruit_MCP3008
 
 class SDIMoistureSensorCollector( object ):
-    def __init__( self ):
+    def __init__( self, min_threshold = 250 ):
         self.spi_port = 0
         self.spi_device = 0
         self.polling_rate = 0.5
         self.sensors = [ 0 ] * 8
+        self.min_threshold = min_threshold
         self._on_moisture_gain = Event()
         self._on_moisture_loss = Event()
         self.mcp3008 = Adafruit_MCP3008.MCP3008( spi=SPI.SpiDev( self.spi_port, self.spi_device ) )
@@ -120,7 +121,7 @@ class SDIMoistureSensorCollector( object ):
                 # raise event if needed and pass current channel as arg
                 value = self.mcp3008.read_adc( channel )
 
-                if value != self.sensors[ channel ]:
+                if value != self.sensors[ channel ] and value > self.min_threshold:
                     if value < self.sensors[ channel ]:
                         self._on_moisture_gain( value, channel )
                     elif value > self.sensors[ channel ]:
@@ -167,6 +168,7 @@ class DefaultValues( object ):
     SPI_PORT = 0
     SPI_DEVICE = 0
     POLLING_RATE = 5
+    MIN_THRESHOLD = 250
     EMAIL_ENABLE = True
     EMAIL_SUBJECT = 'Moisture Sensor Notification'
     EMAIL_TMPL_FILENAME = 'no-moisture.email.html'
@@ -185,6 +187,7 @@ ARGPARSER = argparse.ArgumentParser( description='Yooo. I do some stuff right he
 ARGPARSER.add_argument( '--spi-port', help='SPI Port', type=int )
 ARGPARSER.add_argument( '--spi-device', help='SPI Device', type=int )
 ARGPARSER.add_argument( '--polling-rate', help='Polling Rate', type=int )
+ARGPARSER.add_argument( '--min-threshold', help='Minimum threshold', type=int )
 ARGPARSERCONFIG = Config(
     ARGPARSER.parse_args(),
     ini_fullpath=os.path.join( DefaultValues.PWD_PATH, os.path.basename( __file__ ) + '.ini' )
@@ -201,6 +204,10 @@ SPI_DEVICE = int( ARGPARSERCONFIG.get_config(
 ) )
 POLLING_RATE = float( ARGPARSERCONFIG.get_config(
     'POLLING_RATE', default_val=DefaultValues.POLLING_RATE,
+    env_var=True, ini=True, ini_section='IO'
+) )
+MIN_THRESHOLD = int( ARGPARSERCONFIG.get_config(
+    'MIN_THRESHOLD', default_val=DefaultValues.MIN_THRESHOLD,
     env_var=True, ini=True, ini_section='IO'
 ) )
 EMAIL_ENABLE = bool( ARGPARSERCONFIG.get_config(
@@ -345,7 +352,7 @@ try:
     print( FIGLET.renderText( 'Moisture Sensor Py' ) )
 
     # monitor moisture level logic
-    MOISTURE_SENSOR_COLLECTOR = SDIMoistureSensorCollector()
+    MOISTURE_SENSOR_COLLECTOR = SDIMoistureSensorCollector( min_threshold=MIN_THRESHOLD )
     MOISTURE_SENSOR_COLLECTOR.on_moisture_gain = handle_moisture_gain
     MOISTURE_SENSOR_COLLECTOR.on_moisture_loss = handle_moisture_loss
     MOISTURE_SENSOR_COLLECTOR.run()
